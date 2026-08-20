@@ -444,6 +444,31 @@ drop policy if exists "tickets access" on public.tickets;
 create policy "tickets access" on public.tickets
   for all using (true) with check (true);
 
+-- ---------- SPOTIFY SYNC (playlist -> Supabase) ----------
+-- Guarda las canciones de tu playlist de Spotify. La Route
+-- /api/spotify-sync inserta solo las nuevas (spotify_id único).
+create table if not exists public.spotify_tracks (
+  id uuid primary key default gen_random_uuid(),
+  spotify_id text not null unique,
+  title text not null,
+  artist text not null,
+  album text,
+  cover_url text,
+  preview_url text,
+  external_url text not null,
+  embed_url text not null,
+  duration_ms integer,
+  added_at_spotify timestamptz,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists spotify_tracks_spotify_id_idx on public.spotify_tracks(spotify_id);
+
+alter table public.spotify_tracks enable row level security;
+drop policy if exists "spotify_tracks access" on public.spotify_tracks;
+create policy "spotify_tracks access" on public.spotify_tracks
+  for all using (true) with check (true);
+
 -- 💡 IMPORTANTE: después de ejecutarlo, corre esto para que
 -- Supabase se entere de las tablas y columnas nuevas (evita el
 -- error "Could not find ... in the schema cache"):
