@@ -19,7 +19,6 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { CAPSULES } from "@/data/capsules";
 import { data } from "@/lib/data";
 import type { TimeCapsule } from "@/lib/data/types";
 import { getOpenedCapsules, onCapsulesChanged, openCapsule } from "@/lib/capsules";
@@ -357,29 +356,6 @@ export function CapsulesGallery() {
         list = await data.getCapsules();
       } catch (error) {
         console.error(error);
-      }
-      if (!active) return;
-      if (list.length === 0) {
-        try {
-          await Promise.all(
-            CAPSULES.map((item) =>
-              data.addCapsule({
-                title: item.title,
-                emoji: item.emoji,
-                openDate: item.openDate,
-                message: item.message,
-                hint: item.hint,
-              }),
-            ),
-          );
-          list = await data.getCapsules();
-        } catch (error) {
-          console.error(error);
-          showToast(
-            "Supabase",
-            "Ejecuta docs/supabase-schema.sql en el SQL Editor.",
-          );
-        }
       }
       if (active) setCapsules(list);
       if (active) setLoading(false);

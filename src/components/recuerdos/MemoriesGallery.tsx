@@ -11,10 +11,8 @@
  *   el secreto por revisitar recuerdos.
  *
  * ¿Cómo funciona?
- *   - Carga los recuerdos del proveedor activo (local o Supabase);
- *     la primera vez siembra el contenido de ejemplo de
- *     src/data/memories.ts y desde ahí la galería crece con lo
- *     que suban César y Sofía.
+*  - Carga los recuerdos del proveedor activo (la nube).
+ *    Nada se re-siembra: lo borrado queda borrado.
  *   - "Agregar memoria" abre el compositor (./MemoryComposer.tsx).
  *   - El lightbox permite borrar un recuerdo desde su título.
  *   - Muestra de 9 en 9 ("Cargar más") para crecer sin límite.
@@ -39,7 +37,6 @@ import { motion, type Variants } from "motion/react";
 import { Camera, Plus } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { MEMORIES } from "@/data/memories";
 import { data } from "@/lib/data";
 import type { Memory } from "@/lib/data/types";
 import { showToast } from "@/lib/toast";
@@ -85,7 +82,7 @@ export function MemoriesGallery() {
   const [editing, setEditing] = useState<Memory | null>(null);
   const openedCount = useRef(0);
 
-  // Carga los recuerdos; la primera vez siembra los de ejemplo.
+  // Carga los recuerdos de la nube (sin re-siembra).
   useEffect(() => {
     let active = true;
     const run = async () => {
@@ -94,33 +91,6 @@ export function MemoriesGallery() {
         list = await data.getMemories();
       } catch (error) {
         console.error(error);
-      }
-      if (!active) return;
-      if (list.length === 0) {
-        try {
-          await Promise.all(
-            MEMORIES.map((item) =>
-              data.addMemory({
-                title: item.title,
-                description: item.description,
-                kind: item.kind,
-                url: item.url,
-                date: item.date,
-                emoji: item.emoji,
-                tint: item.tint,
-                tags: item.tags,
-                author: item.author,
-              }),
-            ),
-          );
-          list = await data.getMemories();
-        } catch (error) {
-          console.error(error);
-          showToast(
-            "Supabase",
-            "Ejecuta docs/supabase-schema.sql en el SQL Editor.",
-          );
-        }
       }
       if (active) setMemories(list);
     };

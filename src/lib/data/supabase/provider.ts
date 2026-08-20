@@ -47,6 +47,7 @@ import type {
   Song,
   SpecialDate,
   StoryChapter,
+  Ticket,
   TimeCapsule,
 } from "../types";
 
@@ -370,6 +371,31 @@ function ensureOk(error: unknown): void {
 }
 
 /* ---------- Proveedor Supabase ---------- */
+
+/** Fila de la tabla `tickets` (snake_case) -> Ticket (camelCase). */
+interface TicketRow {
+  id: string;
+  title: string;
+  description: string;
+  status: Ticket["status"];
+  author: string;
+  fixed_by: string | null;
+  fixed_at: string | null;
+  created_at: string;
+}
+
+function toTicket(row: TicketRow): Ticket {
+  return {
+    id: row.id,
+    title: row.title,
+    description: row.description,
+    status: row.status,
+    author: row.author,
+    fixedBy: row.fixed_by ?? undefined,
+    fixedAt: row.fixed_at ?? undefined,
+    createdAt: row.created_at,
+  };
+}
 
 /** Elige la extensión del archivo según su tipo MIME. */
 function storageExtension(mime: string): string {
@@ -943,5 +969,51 @@ export const supabaseProvider: DataProvider = {
       .upload(path, file, { contentType: file.type || "image/jpeg", upsert: false });
     ensureOk(error);
     return getClient().storage.from(LOGROS_BUCKET).getPublicUrl(path).data.publicUrl;
+  },
+
+  /* ---------- Soporte (tickets de fallas) ---------- */
+  async getTickets() {
+    const { data, error } = await getClient().from("tickets").select("*").order("created_at");
+    ensureOk(error);
+    return (data as TicketRow[]).map(toTicket);
+  },
+
+  async addTicket(ticket) {
+    const { data, error } = await getClient()
+      .from("tickets")
+      .insert({
+        title: ticket.title,
+        description: ticket.description,
+        status: ticket.status,
+        author: ticket.author,
+      })
+      .select()
+      .single();
+    ensureOk(error);
+    return toTicket(data as TicketRow);
+  },
+
+  async updateTicket(id, patch) {
+    const update: Record<string, unknown> = {};
+    if (patch.title !== undefined) update.title = patch.title;
+    if (patch.description !== undefined) update.description = patch.description;
+    if (patch.status !== undefined) update.status = patch.status;
+    if (patch.author !== undefined) update.author = patch.author;
+    if (patch.fixedBy !== undefined) update.fixed_by = patch.fixedBy ?? null;
+    if (patch.fixedAt !== undefined) update.fixed_at = patch.fixedAt ?? null;
+
+    const { data, error } = await getClient()
+      .from("tickets")
+      .update(update)
+      .eq("id", id)
+      .select()
+      .single();
+    ensureOk(error);
+    return toTicket(data as TicketRow);
+  },
+
+  async deleteTicket(id) {
+    const { error } = await getClient().from("tickets").delete().eq("id", id);
+    ensureOk(error);
   },
 };

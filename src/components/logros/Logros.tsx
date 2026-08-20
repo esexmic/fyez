@@ -42,7 +42,6 @@ import {
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useAuth } from "@/components/auth/AuthProvider";
-import { ACHIEVEMENTS } from "@/data/achievements";
 import { data } from "@/lib/data";
 import type { Achievement } from "@/lib/data/types";
 import { playChime } from "@/lib/audio/chime";
@@ -63,19 +62,6 @@ const itemVariants: Variants = {
   hidden: { opacity: 0, y: 16 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" } },
 };
-
-/** Los logros de ejemplo se convierten a retos pendientes sin fecha límite. */
-function seedFromStatic() {
-  return ACHIEVEMENTS.map((seed) => ({
-    title: seed.title,
-    emoji: seed.emoji,
-    howto: seed.description ?? "Completa este logro juntos.",
-    author: "Nosotros",
-    deadline: null,
-    status: "pending" as const,
-    images: [] as string[],
-  }));
-}
 
 export function LogrosIntro() {
   return (
@@ -131,20 +117,6 @@ export function LogrosGallery() {
     } catch (error) {
       console.error(error);
       list = [];
-    }
-
-    // Primera vez: se siembran los logros iniciales.
-    if (list.length === 0) {
-      try {
-        await Promise.all(seedFromStatic().map((seed) => data.addAchievement(seed)));
-        list = await data.getAchievements();
-      } catch (error) {
-        console.error(error);
-        showToast(
-          "Supabase",
-          "Abre docs/supabase-schema.sql y ejecuta el bloque de LOGROS (tabla achievements + bucket logros).",
-        );
-      }
     }
 
     // Los retos vencidos pasan solos a fallidos (hora de Monterrey).

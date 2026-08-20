@@ -37,6 +37,7 @@ import type {
   Song,
   SpecialDate,
   StoryChapter,
+  Ticket,
   TimeCapsule,
 } from "./types";
 
@@ -152,4 +153,13 @@ export interface DataProvider {
    * Con el proveedor local se comprime y guarda en el navegador.
    */
   uploadAchievementImage(file: Blob): Promise<string>;
+
+  /* ---------- Soporte (tickets de fallas) ---------- */
+  getTickets(): Promise<Ticket[]>;
+  /** Reporta una falla nueva (estado inicial: abierta). */
+  addTicket(ticket: Omit<Ticket, "id" | "createdAt">): Promise<Ticket>;
+  /** Actualiza una falla (estado, quién la arregló, texto…). */
+  updateTicket(id: string, patch: Partial<Omit<Ticket, "id" | "createdAt">>): Promise<Ticket>;
+  /** Borra una falla del registro. */
+  deleteTicket(id: string): Promise<void>;
 }

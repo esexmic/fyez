@@ -33,6 +33,7 @@ import {
   Music,
   Sparkles,
   Trophy,
+  Wrench,
   type LucideIcon,
 } from "lucide-react";
 import { createElement } from "react";
@@ -51,6 +52,7 @@ export const SECTION_ICONS: Record<string, LucideIcon> = {
   trophy: Trophy,
   hourglass: Hourglass,
   sparkles: Sparkles,
+  wrench: Wrench,
 };
 
 export interface SectionIconProps {

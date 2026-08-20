@@ -10,7 +10,6 @@ import { motion, type Variants } from "motion/react";
 import { useCallback, useEffect, useState } from "react";
 import { Gift, Plus } from "lucide-react";
 
-import { GIFTS } from "@/data/gifts";
 import { data } from "@/lib/data";
 import type { Gift as GiftType } from "@/lib/data/types";
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -48,7 +47,7 @@ export function GiftsGallery() {
   const [editing, setEditing] = useState<GiftType | null>(null);
   const [reading, setReading] = useState<GiftType | null>(null);
 
-  // Carga los regalos; la primera vez siembra los de ejemplo.
+  // Carga los regalos de la nube (sin re-siembra).
   useEffect(() => {
     let active = true;
     const run = async () => {
@@ -57,31 +56,6 @@ export function GiftsGallery() {
         list = await data.getGifts();
       } catch (error) {
         console.error(error);
-      }
-      if (!active) return;
-      if (list.length === 0) {
-        try {
-          await Promise.all(
-            GIFTS.map((item) =>
-              data.addGift({
-                kind: item.kind,
-                title: item.title,
-                subtitle: item.subtitle,
-                description: item.description,
-                author: item.author,
-                emoji: item.emoji,
-                date: item.date,
-              }),
-            ),
-          );
-          list = await data.getGifts();
-        } catch (error) {
-          console.error(error);
-          showToast(
-            "Supabase",
-            "Ejecuta docs/supabase-schema.sql en el SQL Editor.",
-          );
-        }
       }
       if (active) setGifts(list);
     };

@@ -311,30 +311,11 @@ begin
 end $$;
 
 -- ============================================================
--- TUS CARTAS — PLANTILLA PARA PEGAR (sin ejemplos)
+-- CARTAS (tabla)
 -- ============================================================
--- Copia este bloque, reemplaza lo que está entre comillas ('...')
--- y ejecútalo. Cada bloque entre paréntesis ( ... ) es una carta.
--- Separa los párrafos con \n\n dentro del texto.
--- created_at: fecha en formato ISO (ej: '2026-08-16T12:00:00Z').
---
--- Varias cartas a la vez: separa los bloques con una coma (,)
--- como en el ejemplo de abajo (hay 2 memorizadas; agrega o quita).
-
-insert into public.letters (title, content, created_at, read) values
-(
-  'Título de tu primera carta',
-  'Primer párrafo de tu carta.\n\nSegundo párrafo, separado por una línea en blanco.',
-  '2026-01-01T12:00:00Z',
-  false
-),
-(
-  'Título de tu segunda carta',
-  'Así se agrega otra: copia este bloque, sepáralo con una coma del anterior y cámbialo.',
-  '2026-02-14T12:00:00Z',
-  false
-)
-on conflict do nothing;
+-- Las cartas se escriben desde la página /cartas > "Escribir una
+-- carta" y se guardan aquí solas. No hay cartas de ejemplo ni
+-- re-siembra: lo que se borra, queda borrado para siempre.
 
 -- 💡 Alternativa: una vez conectada la app, también puedes
 -- escribir cartas desde la página /cartas > "Escribir una carta"
@@ -376,17 +357,9 @@ drop policy if exists "fechas access" on public.fechas;
 create policy "fechas access" on public.fechas
   for all using (true) with check (true);
 
--- Fechas de ejemplo (idempotente: no se duplican al re-ejecutar).
--- Cambia o borra las que quieras; las tuyas se agregan desde la
--- página /calendario > "Agregar fecha".
-insert into public.fechas (id, date, title, emoji, description) values
-  ('navidad', '12-25', 'Nuestra Navidad', '🎄', 'El día en que empezó todo.'),
-  ('cumple-cesar', '01-31', 'Cumpleaños de César', '🎂', null),
-  ('cumple-sofia', '08-22', 'Cumpleaños de Sofía', '🎁', null),
-  ('san-valentin', '02-14', 'San Valentín', '💘', 'El 14 nos queda corto.'),
-  ('aniversario', '12-25', 'Aniversario', '💍', 'Otro año eligiéndonos.'),
-  ('dahood', '01-12', 'Día del Dahood', '🎮', 'El primer día que jugamos juntos.')
-on conflict (id) do nothing;
+-- Fechas de ejemplo: ya no se siembran. Las fechas se agregan
+-- desde la página /calendario > "Agregar fecha" y lo que se
+-- borra, queda borrado para siempre.
 
 -- ---------- CÁPSULAS DEL TIEMPO (agregar/editar/borrar desde la página) ----------
 create table if not exists public.capsulas (
@@ -450,6 +423,26 @@ begin
       on storage.objects for delete using (bucket_id = 'calendario');
   end if;
 end $$;
+
+-- ---------- SOPORTE (tickets de fallas reportadas) ----------
+-- Fallas que encuentran César o Sofía en la app y quieren
+-- anotar para arreglarlas después. Se reportan desde la página
+-- /soporte > "Reportar falla" y se marcan "arregladas" ahí mismo.
+create table if not exists public.tickets (
+  id text primary key default gen_random_uuid()::text,
+  title text not null,
+  description text not null default '',
+  status text not null default 'open' check (status in ('open', 'fixed')),
+  author text not null default '',
+  fixed_by text,
+  fixed_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
+alter table public.tickets enable row level security;
+drop policy if exists "tickets access" on public.tickets;
+create policy "tickets access" on public.tickets
+  for all using (true) with check (true);
 
 -- 💡 IMPORTANTE: después de ejecutarlo, corre esto para que
 -- Supabase se entere de las tablas y columnas nuevas (evita el

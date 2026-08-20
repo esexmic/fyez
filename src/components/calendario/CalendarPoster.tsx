@@ -39,7 +39,6 @@ import { AnimatePresence, motion, type Variants } from "motion/react";
 import { CalendarHeart, ChevronDown, ImagePlus, Plus, Trash2, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { SPECIAL_DATES } from "@/data/specialDates";
 import { data } from "@/lib/data";
 import type { SpecialDate } from "@/lib/data/types";
 import { playChime } from "@/lib/audio/chime";
@@ -567,28 +566,6 @@ export function CalendarPoster() {
         list = await data.getSpecialDates();
       } catch (error) {
         console.error(error);
-      }
-      if (!active) return;
-      if (list.length === 0) {
-        try {
-          await Promise.all(
-            SPECIAL_DATES.map((item) =>
-              data.addSpecialDate({
-                date: item.date,
-                title: item.title,
-                emoji: item.emoji,
-                description: item.description,
-              }),
-            ),
-          );
-          list = await data.getSpecialDates();
-        } catch (error) {
-          console.error(error);
-          showToast(
-            "Supabase",
-            "Ejecuta docs/supabase-schema.sql en el SQL Editor.",
-          );
-        }
       }
       if (active) setDates(list);
     };

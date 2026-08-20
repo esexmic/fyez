@@ -11,8 +11,8 @@
  *   en la nube (Supabase) y se ve en ambos.
  *
  * ¿Cómo funciona?
- *   - Carga los capítulos del proveedor de la nube; la primera
- *     vez siembra los ya escritos de src/data/history/chapters.ts.
+*  - Carga los capítulos del proveedor de la nube. Nada se
+ *     re-siembra: lo borrado queda borrado.
  *   - "Escribir capítulo" abre el compositor; al editar se abre
  *     con el capítulo relleno. Los cambios entran solos a la
  *     línea de tiempo, sin recargar la página.
@@ -31,7 +31,6 @@ import { motion, type Variants } from "motion/react";
 import { PenLine } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { CHAPTERS } from "@/data/history/chapters";
 import { data } from "@/lib/data";
 import type { StoryChapter } from "@/lib/data/types";
 import { playChime } from "@/lib/audio/chime";
@@ -65,7 +64,7 @@ export function HistoriaTimeline() {
   const [editing, setEditing] = useState<StoryChapter | null>(null);
   const readCount = useRef(0);
 
-  // Carga los capítulos; la primera vez siembra los ya escritos.
+  // Carga los capítulos de la nube (sin re-siembra).
   useEffect(() => {
     let active = true;
     const run = async () => {
@@ -74,30 +73,6 @@ export function HistoriaTimeline() {
         list = await data.getStoryChapters();
       } catch (error) {
         console.error(error);
-      }
-      if (!active) return;
-      if (list.length === 0) {
-        try {
-          await Promise.all(
-            CHAPTERS.map((item) =>
-              data.addStoryChapter({
-                title: item.title,
-                date: item.date,
-                content: item.content,
-                atmosphere: item.atmosphere ?? undefined,
-                quote: item.quote ?? undefined,
-                author: item.author ?? "César",
-              }),
-            ),
-          );
-          list = await data.getStoryChapters();
-        } catch (error) {
-          console.error(error);
-          showToast(
-            "Supabase",
-            "Ejecuta docs/supabase-schema.sql en el SQL Editor.",
-          );
-        }
       }
       if (active) {
         setChapters([...list].sort((a, b) => a.date.localeCompare(b.date)));

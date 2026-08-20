@@ -171,6 +171,24 @@ export interface CalendarPhoto {
   url: string | null;
 }
 
+/** Una falla o pendiente reportado en el apartado Soporte. */
+export interface Ticket {
+  id: string;
+  /** Qué falla o qué falta arreglar. */
+  title: string;
+  /** Explicación más larga de la falla. */
+  description: string;
+  /** "open": falla reportada · "fixed": ya arreglada. */
+  status: "open" | "fixed";
+  /** Quién la reportó (César o Sofía). */
+  author: string;
+  /** Quién la arregló (cuando se marca como arreglada). */
+  fixedBy?: string;
+  /** Cuándo se arregló (ISO). */
+  fixedAt?: string;
+  createdAt: string; // ISO
+}
+
 /* ------------------------------------------------------------------ */
 /* LOGROS (dinámicos, con retos y verificación)                        */
 /* ------------------------------------------------------------------ */

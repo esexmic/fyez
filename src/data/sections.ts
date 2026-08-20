@@ -30,7 +30,7 @@
 import type { AtmosphereId } from "@/data/atmospheres";
 
 export type SectionStatus = "built" | "planned";
-export type SectionPhase = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14;
+export type SectionPhase = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15;
 export type SectionAccent = "violet" | "purple" | "pink" | "blush";
 
 export interface Section {
@@ -187,6 +187,18 @@ export const SECTIONS: Section[] = [
     inNavbar: false,
     atmosphere: "noche-magica",
     phase: 14,
+    status: "built",
+  },
+  {
+    id: "soporte",
+    label: "Soporte",
+    href: "/soporte",
+    description: "Fallas que encontramos en la app y queremos arreglar.",
+    icon: "wrench",
+    accent: "purple",
+    inNavbar: true,
+    atmosphere: "primavera",
+    phase: 15,
     status: "built",
   },
 ];
