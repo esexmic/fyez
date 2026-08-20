@@ -22,7 +22,7 @@
 
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { getAccessToken, getPlaylistTracks } from '@/lib/spotify';
+import { getAccessToken, getClientCredentialsToken, getPlaylistTracks } from '@/lib/spotify';
 
 export const dynamic = 'force-dynamic';
 
@@ -64,8 +64,16 @@ export async function GET(req: Request) {
   }
 
   try {
-    // 1. Auth Spotify
-    const accessToken = await getAccessToken();
+    // 1. Auth Spotify — para playlist pública usamos Client Credentials (sin Premium).
+    //    Si en el futuro la haces privada, cambia a getAccessToken() (requiere REFRESH_TOKEN + Premium).
+    let accessToken: string;
+    try {
+      accessToken = await getClientCredentialsToken();
+    } catch (e) {
+      // Fallback a refresh token si client_credentials falla
+      console.warn('[spotify-sync] client_credentials fallo, probando refresh_token:', e);
+      accessToken = await getAccessToken();
+    }
 
     // 2. Traer playlist completa
     const spotifyTracks = await getPlaylistTracks(playlistId, accessToken);
