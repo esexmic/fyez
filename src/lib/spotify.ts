@@ -102,8 +102,9 @@ export async function getPlaylistTracks(
   playlistId: string,
   accessToken: string,
 ): Promise<SpotifyTrack[]> {
+  // Nota: /tracks está deprecado, usar /items (mismo payload)
   let url: string | null =
-    `https://api.spotify.com/v1/playlists/${playlistId}/tracks` +
+    `https://api.spotify.com/v1/playlists/${playlistId}/items` +
     `?limit=100&offset=0&fields=next,items(added_at,track(id,name,artists(name),album(name,images),external_urls,duration_ms,preview_url))`;
 
   const tracks: SpotifyTrack[] = [];
