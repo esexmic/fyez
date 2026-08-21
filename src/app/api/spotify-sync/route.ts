@@ -64,19 +64,37 @@ export async function GET(req: Request) {
   }
 
   try {
-    // 1. Auth Spotify — para playlist pública usamos Client Credentials (sin Premium).
-    //    Si en el futuro la haces privada, cambia a getAccessToken() (requiere REFRESH_TOKEN + Premium).
+    // 1. Auth Spotify — prioriza usuario (REFRESH_TOKEN) porque tu playlist
+    //    colaborativa/pública requiere "Valid user authentication".
+    //    Si no hay refresh_token, cae a Client Credentials.
     let accessToken: string;
-    try {
-      accessToken = await getClientCredentialsToken();
-    } catch (e) {
-      // Fallback a refresh token si client_credentials falla
-      console.warn('[spotify-sync] client_credentials fallo, probando refresh_token:', e);
-      accessToken = await getAccessToken();
-    }
+    let spotifyTracks: Awaited<ReturnType<typeof getPlaylistTracks>>;
+    const hasRefresh = !!process.env.SPOTIFY_REFRESH_TOKEN;
 
-    // 2. Traer playlist completa
-    const spotifyTracks = await getPlaylistTracks(playlistId, accessToken);
+    const tryUserToken = async () => {
+      const tok = await getAccessToken();
+      return getPlaylistTracks(playlistId, tok);
+    };
+    const tryClientToken = async () => {
+      const tok = await getClientCredentialsToken();
+      return getPlaylistTracks(playlistId, tok);
+    };
+
+    if (hasRefresh) {
+      try {
+        spotifyTracks = await tryUserToken();
+      } catch (e) {
+        console.warn('[spotify-sync] user token fallo, probando client_credentials:', e);
+        spotifyTracks = await tryClientToken();
+      }
+    } else {
+      try {
+        spotifyTracks = await tryClientToken();
+      } catch (e) {
+        console.warn('[spotify-sync] client_credentials fallo, probando refresh_token:', e);
+        spotifyTracks = await tryUserToken();
+      }
+    }
 
     if (spotifyTracks.length === 0) {
       return NextResponse.json({ ok: true, inserted: 0, total: 0, message: 'Playlist vacía' });
