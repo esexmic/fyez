@@ -102,10 +102,9 @@ export async function getPlaylistTracks(
   playlistId: string,
   accessToken: string,
 ): Promise<SpotifyTrack[]> {
-  // Nota: /tracks está deprecado, usar /items (mismo payload)
+  // Nota: /tracks está deprecado, usar /items
   let url: string | null =
-    `https://api.spotify.com/v1/playlists/${playlistId}/items` +
-    `?limit=100&offset=0&fields=next,items(added_at,track(id,name,artists(name),album(name,images),external_urls,duration_ms,preview_url))`;
+    `https://api.spotify.com/v1/playlists/${playlistId}/items` + `?limit=100&offset=0`;
 
   const tracks: SpotifyTrack[] = [];
 
@@ -137,12 +136,13 @@ export async function getPlaylistTracks(
     };
 
     for (const item of data.items) {
-      const t = item.track;
+      // Compat: /items usa `item`, /tracks usa `track`
+      const t: any = (item as any).track || (item as any).item;
       if (!t?.id) continue; // track eliminado, local o episodio
       tracks.push({
         spotify_id: t.id,
         title: t.name,
-        artist: t.artists.map((a) => a.name).join(', '),
+        artist: (t.artists as Array<{ name: string }>).map((a) => a.name).join(', '),
         album: t.album?.name ?? null,
         cover_url: t.album?.images?.[0]?.url ?? null,
         preview_url: t.preview_url,
