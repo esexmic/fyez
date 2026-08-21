@@ -5,6 +5,7 @@ import { motion, type Variants } from "motion/react";
 import {
   Check,
   Cloud,
+  Download,
   ExternalLink,
   HardDrive,
   Music,
@@ -200,6 +201,7 @@ export function SongsList() {
   const [deletingSong, setDeletingSong] = useState<Song | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [spotifyTracks, setSpotifyTracks] = useState<SpotifySyncTrack[]>([]);
+  const [savingId, setSavingId] = useState<string | null>(null);
 
   // Carga de canciones: de la más antigua a la más reciente.
   useEffect(() => {
@@ -255,6 +257,31 @@ export function SongsList() {
       playSong(song);
     },
     [playSong],
+  );
+
+  const handleSaveToApp = useCallback(
+    async (track: SpotifySyncTrack) => {
+      if (savingId) return;
+      setSavingId(track.spotify_id);
+      try {
+        const res = await fetch('/api/spotify-to-song', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ spotifyId: track.spotify_id }),
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error || 'Error al guardar');
+        showToast('Guardada en la app', `"${track.title}" ya está en tu banda sonora completa`);
+        // Recarga la lista de canciones normales
+        const items = await data.getSongs();
+        setSongs([...items].sort((a, b) => a.createdAt.localeCompare(b.createdAt)));
+      } catch (e) {
+        showToast('No se pudo guardar', e instanceof Error ? e.message : 'Inténtalo de nuevo');
+      } finally {
+        setSavingId(null);
+      }
+    },
+    [savingId],
   );
 
   const handleToggle = useCallback(
@@ -501,6 +528,15 @@ export function SongsList() {
                       >
                         {isThisPlaying ? <Pause className="size-4" /> : <Play className="size-4 translate-x-[1px]" />}
                       </span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void handleSaveToApp(track)}
+                      disabled={savingId === track.spotify_id}
+                      title="Guardar en la app (descarga completa)"
+                      className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-full border border-white/10 text-starlight/60 transition-colors hover:border-blush-glow/40 hover:text-blush-glow disabled:opacity-50"
+                    >
+                      <Download className={savingId === track.spotify_id ? 'size-3.5 animate-pulse' : 'size-3.5'} />
                     </button>
                     <a
                       href={track.external_url}
