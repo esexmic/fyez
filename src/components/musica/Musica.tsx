@@ -235,6 +235,28 @@ export function SongsList() {
     void loadSpotify();
   }, [loadSpotify]);
 
+  const handlePlaySpotify = useCallback(
+    (track: SpotifySyncTrack) => {
+      if (!track.preview_url) {
+        showToast('Sin preview', 'Esta canción no tiene preview de 30s, abriendo en Spotify');
+        window.open(track.external_url, '_blank');
+        return;
+      }
+      const song: Song = {
+        id: `spotify-${track.spotify_id}`,
+        title: track.title,
+        artist: track.artist,
+        reason: track.album ? `Álbum: ${track.album}` : '',
+        author: 'Spotify',
+        audioUrl: track.preview_url,
+        emoji: '🎵',
+        createdAt: track.created_at,
+      };
+      playSong(song);
+    },
+    [playSong],
+  );
+
   const handleToggle = useCallback(
     (song: Song) => {
       if (current?.id === song.id) {
@@ -433,42 +455,66 @@ export function SongsList() {
             viewport={{ once: true, margin: "-60px" }}
             className="flex flex-col gap-4"
           >
-            {spotifyTracks.map((track, index) => (
-              <motion.li key={track.spotify_id} variants={itemVariants}>
-                <a
-                  href={track.external_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group flex items-center gap-4 rounded-2xl border border-white/10 bg-night-900/60 p-4 transition-colors hover:border-green-400/30"
-                >
-                  {track.cover_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={track.cover_url}
-                      alt={track.title}
-                      className="size-14 shrink-0 rounded-xl object-cover"
-                    />
-                  ) : (
-                    <span className="flex size-14 shrink-0 items-center justify-center rounded-xl bg-night-800 text-xl">
-                      🎵
-                    </span>
-                  )}
-                  <div className="min-w-0 flex-1">
-                    <p className="flex items-center gap-2 truncate text-sm font-semibold text-primary">
-                      <span className="text-xs text-starlight/40">#{index + 1}</span>
-                      {track.title}
-                    </p>
-                    <p className="truncate text-xs text-starlight/70">
-                      {track.artist}
-                      {track.album ? ` · ${track.album}` : ''}
-                    </p>
+            {spotifyTracks.map((track, index) => {
+              const isThisPlaying = current?.id === `spotify-${track.spotify_id}` && isPlaying;
+              return (
+                <motion.li key={track.spotify_id} variants={itemVariants}>
+                  <div className="group flex items-center gap-3 rounded-2xl border border-white/10 bg-night-900/60 p-4 transition-colors hover:border-green-400/30">
+                    <button
+                      type="button"
+                      onClick={() => handlePlaySpotify(track)}
+                      className="flex min-w-0 flex-1 items-center gap-4 text-left"
+                    >
+                      {track.cover_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={track.cover_url}
+                          alt={track.title}
+                          className="size-14 shrink-0 rounded-xl object-cover"
+                        />
+                      ) : (
+                        <span className="flex size-14 shrink-0 items-center justify-center rounded-xl bg-night-800 text-xl">
+                          🎵
+                        </span>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="flex items-center gap-2 truncate text-sm font-semibold text-primary">
+                          <span className="text-xs text-starlight/40">#{index + 1}</span>
+                          {track.title}
+                          {isThisPlaying && (
+                            <span className="rounded-full bg-green-400/15 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-green-400">
+                              Sonando
+                            </span>
+                          )}
+                        </p>
+                        <p className="truncate text-xs text-starlight/70">
+                          {track.artist}
+                          {track.album ? ` · ${track.album}` : ''}
+                        </p>
+                      </div>
+                      <span
+                        className={
+                          isThisPlaying
+                            ? 'flex size-9 shrink-0 items-center justify-center rounded-full border border-green-400/50 bg-night-800 text-green-400'
+                            : 'flex size-9 shrink-0 items-center justify-center rounded-full border border-white/10 text-starlight/60 transition-colors group-hover:border-green-400/40 group-hover:text-green-400'
+                        }
+                      >
+                        {isThisPlaying ? <Pause className="size-4" /> : <Play className="size-4 translate-x-[1px]" />}
+                      </span>
+                    </button>
+                    <a
+                      href={track.external_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title="Abrir en Spotify"
+                      className="flex size-8 shrink-0 items-center justify-center rounded-full text-starlight/40 transition-colors hover:text-green-400"
+                    >
+                      <ExternalLink className="size-3.5" />
+                    </a>
                   </div>
-                  <span className="flex size-9 shrink-0 items-center justify-center rounded-full border border-white/10 text-starlight/60 transition-colors group-hover:border-green-400/40 group-hover:text-green-400">
-                    <ExternalLink className="size-4" />
-                  </span>
-                </a>
-              </motion.li>
-            ))}
+                </motion.li>
+              );
+            })}
           </motion.ul>
         </div>
       )}
