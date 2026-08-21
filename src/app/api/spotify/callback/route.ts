@@ -81,15 +81,17 @@ export async function GET(req: Request) {
   }
 
   // data.refresh_token es el que dura para siempre
+  const escapedToken = data.refresh_token.replace(/&/g, '&amp;').replace(/</g, '&lt;');
   return new NextResponse(
-    `<html><body style="font-family:sans-serif;padding:40px;background:#0e1530;color:#e9edf6;word-break:break-all">
+    `<html><body style="font-family:sans-serif;padding:40px;background:#0e1530;color:#e9edf6">
       <h1 style="color:#8fae8f">✅ ¡Conectado!</h1>
       <p>Copia este valor y ponlo en tu <b>.env.local</b> y en <b>Vercel > Settings > Environment Variables</b>:</p>
       <div style="background:#1c2649;border:1px solid #2a3560;padding:16px;border-radius:12px;margin:16px 0">
         <div style="font-size:11px;letter-spacing:.15em;opacity:.6">SPOTIFY_REFRESH_TOKEN</div>
-        <code style="font-size:14px;color:#d8bd8f">${data.refresh_token}</code>
+        <textarea id="tok" readonly style="width:100%;margin-top:8px;background:#0e1530;color:#d8bd8f;border:1px solid #2a3560;border-radius:8px;padding:12px;font-size:13px;word-break:break-all;min-height:80px">${escapedToken}</textarea>
+        <button onclick="navigator.clipboard.writeText(document.getElementById('tok').value);this.textContent='¡Copiado!'" style="margin-top:10px;background:#a08ad8;color:#0e1530;border:none;padding:8px 16px;border-radius:999px;cursor:pointer;font-weight:bold">Copiar</button>
       </div>
-      <p style="font-size:13px;opacity:.7">access_token de prueba (expira en 1h):<br><code>${data.access_token.slice(0, 60)}...</code></p>
+      <p style="font-size:13px;opacity:.7">access_token de prueba (expira en 1h):<br><code style="word-break:break-all">${data.access_token.slice(0, 80)}...</code></p>
       <p style="margin-top:24px"><b>Siguiente:</b> ya puedes cerrar esto y probar <code>/api/spotify-sync</code></p>
     </body></html>`,
     { headers: { 'Content-Type': 'text/html' } },
