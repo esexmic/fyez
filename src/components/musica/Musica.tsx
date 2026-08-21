@@ -11,6 +11,7 @@ import {
   Pencil,
   Play,
   Plus,
+  RefreshCw,
   Trash2,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
@@ -196,6 +197,7 @@ export function SongsList() {
   const [editingSong, setEditingSong] = useState<Song | null>(null);
   const [editMode, setEditMode] = useState(false);
   const [deletingSong, setDeletingSong] = useState<Song | null>(null);
+  const [syncing, setSyncing] = useState(false);
 
   // Carga de canciones: de la más antigua a la más reciente.
   useEffect(() => {
@@ -321,6 +323,37 @@ export function SongsList() {
         >
           <Plus className="size-4" />
           Subir canción
+        </button>
+
+        <button
+          type="button"
+          onClick={async () => {
+            if (syncing) return;
+            setSyncing(true);
+            try {
+              const res = await fetch('/api/spotify-sync');
+              const json = await res.json();
+              if (!res.ok) throw new Error(json.error || 'Error al sincronizar');
+              if (json.inserted > 0) {
+                showToast('Spotify sincronizado', `${json.inserted} canciones nuevas guardadas`);
+              } else {
+                showToast('Spotify al día', json.message || 'No hay canciones nuevas');
+              }
+            } catch (e) {
+              showToast('No se pudo sincronizar', e instanceof Error ? e.message : 'Inténtalo de nuevo');
+            } finally {
+              setSyncing(false);
+            }
+          }}
+          disabled={syncing}
+          title="Sincroniza tu playlist de Spotify al instante (sin esperar al cron diario)"
+          className={cn(
+            'inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-full border px-5 text-sm font-medium transition-all duration-300 active:scale-[0.97]',
+            'border-green-glow/30 bg-green-glow/10 text-green-glow hover:bg-green-glow/15 disabled:opacity-50',
+          )}
+        >
+          <RefreshCw className={cn('size-4', syncing && 'animate-spin')} />
+          {syncing ? 'Sincronizando…' : 'Sincronizar Spotify'}
         </button>
       </div>
 
