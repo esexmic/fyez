@@ -45,6 +45,7 @@ import type {
   Memory,
   SecretEntry,
   Song,
+  SpotifySyncTrack,
   SpecialDate,
   StoryChapter,
   Ticket,
@@ -1015,5 +1016,14 @@ export const supabaseProvider: DataProvider = {
   async deleteTicket(id) {
     const { error } = await getClient().from("tickets").delete().eq("id", id);
     ensureOk(error);
+  },
+
+  async getSpotifyTracks() {
+    const { data, error } = await getClient()
+      .from("spotify_tracks")
+      .select("*")
+      .order("created_at", { ascending: false });
+    ensureOk(error);
+    return (data ?? []) as unknown as SpotifySyncTrack[];
   },
 };

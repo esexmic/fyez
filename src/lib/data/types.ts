@@ -171,6 +171,22 @@ export interface CalendarPhoto {
   url: string | null;
 }
 
+/** Una canción sincronizada desde Spotify (tabla spotify_tracks). */
+export interface SpotifySyncTrack {
+  id: string;
+  spotify_id: string;
+  title: string;
+  artist: string;
+  album: string | null;
+  cover_url: string | null;
+  preview_url: string | null;
+  external_url: string;
+  embed_url: string;
+  duration_ms: number | null;
+  added_at_spotify: string | null;
+  created_at: string;
+}
+
 /** Una falla o pendiente reportado en el apartado Soporte. */
 export interface Ticket {
   id: string;

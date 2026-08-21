@@ -35,6 +35,7 @@ import type {
   Memory,
   SecretEntry,
   Song,
+  SpotifySyncTrack,
   SpecialDate,
   StoryChapter,
   Ticket,
@@ -162,4 +163,7 @@ export interface DataProvider {
   updateTicket(id: string, patch: Partial<Omit<Ticket, "id" | "createdAt">>): Promise<Ticket>;
   /** Borra una falla del registro. */
   deleteTicket(id: string): Promise<void>;
+
+  /* ---------- Spotify Sync ---------- */
+  getSpotifyTracks(): Promise<SpotifySyncTrack[]>;
 }

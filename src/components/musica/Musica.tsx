@@ -5,6 +5,7 @@ import { motion, type Variants } from "motion/react";
 import {
   Check,
   Cloud,
+  ExternalLink,
   HardDrive,
   Music,
   Pause,
@@ -18,7 +19,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { useSongPlayer } from "@/components/musica/SongPlayerContext";
 import { data } from "@/lib/data";
-import type { Song } from "@/lib/data/types";
+import type { Song, SpotifySyncTrack } from "@/lib/data/types";
 import { playChime } from "@/lib/audio/chime";
 import { showToast } from "@/lib/toast";
 import { cn } from "@/lib/utils/cn";
@@ -198,6 +199,7 @@ export function SongsList() {
   const [editMode, setEditMode] = useState(false);
   const [deletingSong, setDeletingSong] = useState<Song | null>(null);
   const [syncing, setSyncing] = useState(false);
+  const [spotifyTracks, setSpotifyTracks] = useState<SpotifySyncTrack[]>([]);
 
   // Carga de canciones: de la más antigua a la más reciente.
   useEffect(() => {
@@ -219,6 +221,19 @@ export function SongsList() {
       active = false;
     };
   }, []);
+
+  const loadSpotify = useCallback(async () => {
+    try {
+      const items = await data.getSpotifyTracks();
+      setSpotifyTracks(items);
+    } catch {
+      setSpotifyTracks([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadSpotify();
+  }, [loadSpotify]);
 
   const handleToggle = useCallback(
     (song: Song) => {
@@ -339,6 +354,7 @@ export function SongsList() {
               } else {
                 showToast('Spotify al día', json.message || 'No hay canciones nuevas');
               }
+              void loadSpotify();
             } catch (e) {
               showToast('No se pudo sincronizar', e instanceof Error ? e.message : 'Inténtalo de nuevo');
             } finally {
@@ -400,6 +416,61 @@ export function SongsList() {
         <p className="py-16 text-center text-sm italic text-starlight/60">
           Todavía no hay canciones en la banda sonora.
         </p>
+      )}
+
+      {/* Playlist de Spotify sincronizada */}
+      {spotifyTracks.length > 0 && (
+        <div className="mt-12">
+          <h2 className="mb-4 flex items-center gap-2 font-display text-lg font-semibold text-primary">
+            <span className="inline-flex size-2 rounded-full bg-green-400" />
+            De Spotify
+            <span className="text-xs font-normal text-starlight/60">({spotifyTracks.length})</span>
+          </h2>
+          <motion.ul
+            variants={gridVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-60px" }}
+            className="flex flex-col gap-4"
+          >
+            {spotifyTracks.map((track, index) => (
+              <motion.li key={track.spotify_id} variants={itemVariants}>
+                <a
+                  href={track.external_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group flex items-center gap-4 rounded-2xl border border-white/10 bg-night-900/60 p-4 transition-colors hover:border-green-400/30"
+                >
+                  {track.cover_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={track.cover_url}
+                      alt={track.title}
+                      className="size-14 shrink-0 rounded-xl object-cover"
+                    />
+                  ) : (
+                    <span className="flex size-14 shrink-0 items-center justify-center rounded-xl bg-night-800 text-xl">
+                      🎵
+                    </span>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="flex items-center gap-2 truncate text-sm font-semibold text-primary">
+                      <span className="text-xs text-starlight/40">#{index + 1}</span>
+                      {track.title}
+                    </p>
+                    <p className="truncate text-xs text-starlight/70">
+                      {track.artist}
+                      {track.album ? ` · ${track.album}` : ''}
+                    </p>
+                  </div>
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-full border border-white/10 text-starlight/60 transition-colors group-hover:border-green-400/40 group-hover:text-green-400">
+                    <ExternalLink className="size-4" />
+                  </span>
+                </a>
+              </motion.li>
+            ))}
+          </motion.ul>
+        </div>
       )}
 
       {/* Compositor / editor */}
