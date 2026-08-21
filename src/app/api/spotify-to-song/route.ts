@@ -21,25 +21,62 @@ type SpotifyTrackDetail = {
 };
 
 async function searchYoutubeVideoId(query: string): Promise<string | null> {
-  // Piped API (instancia pública) — sin key, busca en YouTube
-  const searchUrl = `https://pipedapi.kavin.rocks/search?q=${encodeURIComponent(query)}&filter=music_songs`;
-  const res = await fetch(searchUrl, { cache: 'no-store' });
-  if (!res.ok) return null;
-  const data = (await res.json()) as { items?: Array<{ url?: string }> };
-  const first = data.items?.[0]?.url;
-  if (!first) return null;
-  // url es "/watch?v=VIDEO_ID"
-  const m = first.match(/v=([^&]+)/);
-  return m ? m[1] : null;
+  // Prueba varias instancias de Piped/Invidious y queries, para no fallar por una instancia caída
+  const queries = [query, query.replace(' official audio', ''), query.split(' - ')[0]];
+  const endpoints = [
+    (q: string) => `https://pipedapi.kavin.rocks/search?q=${encodeURIComponent(q)}&filter=music_songs`,
+    (q: string) => `https://pipedapi.kavin.rocks/search?q=${encodeURIComponent(q)}`,
+    (q: string) => `https://pipedapi.adminforge.de/search?q=${encodeURIComponent(q)}&filter=music_songs`,
+    (q: string) => `https://invidious.snopyta.org/api/v1/search?q=${encodeURIComponent(q)}&type=video`,
+    (q: string) => `https://inv.nadeko.net/api/v1/search?q=${encodeURIComponent(q)}&type=video`,
+  ];
+
+  for (const q of queries) {
+    for (const makeUrl of endpoints) {
+      try {
+        const url = makeUrl(q);
+        const res = await fetch(url, { cache: 'no-store', headers: { 'User-Agent': 'Mozilla/5.0' } });
+        if (!res.ok) continue;
+        const data = (await res.json()) as any;
+        // Piped: { items: [{ url: "/watch?v=..." }] }, Invidious: [{ videoId: "..." }]
+        let videoId: string | null = null;
+        if (Array.isArray(data)) {
+          // Invidious
+          videoId = data[0]?.videoId ?? null;
+        } else {
+          const first = data.items?.[0]?.url || data.items?.[0]?.videoId;
+          if (first) {
+            const m = String(first).match(/v=([^&]+)/);
+            videoId = m ? m[1] : (first as string);
+          }
+        }
+        if (videoId) return videoId;
+      } catch {
+        continue;
+      }
+    }
+  }
+  return null;
 }
 
 async function getPipedAudioUrl(videoId: string): Promise<string | null> {
-  const res = await fetch(`https://pipedapi.kavin.rocks/streams/${videoId}`, { cache: 'no-store' });
-  if (!res.ok) return null;
-  const data = (await res.json()) as { audioStreams?: Array<{ url: string; mimeType?: string }> };
-  // Prefer opus/webm, si no mp4
-  const audio = data.audioStreams?.[0];
-  return audio?.url ?? null;
+  const endpoints = [
+    `https://pipedapi.kavin.rocks/streams/${videoId}`,
+    `https://pipedapi.adminforge.de/streams/${videoId}`,
+    `https://pipedapi.reallyaweso.me/streams/${videoId}`,
+  ];
+  for (const url of endpoints) {
+    try {
+      const res = await fetch(url, { cache: 'no-store' });
+      if (!res.ok) continue;
+      const data = (await res.json()) as { audioStreams?: Array<{ url: string }> };
+      const audio = data.audioStreams?.[0];
+      if (audio?.url) return audio.url;
+    } catch {
+      continue;
+    }
+  }
+  return null;
 }
 
 export async function POST(req: Request) {
